@@ -1,0 +1,17 @@
+# Ignore virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# macOS system files
+.DS_Store
+
+# IDE settings
+.vscode/
+
+# Testing and coverage tools
+.pytest_cache/
+.mypy_cache/
+htmlcov/
