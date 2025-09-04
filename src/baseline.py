@@ -89,12 +89,17 @@ class ProfitCalculator:
             for product in ["Product 1", "Product 2"]:
                 for agent in self.df_reservation.columns:
                     current_price = prices.loc[(period, product), agent]
-                    if buy_signals.loc[(period, product, agent)] == 0:
-                        # Decrease price by half the distance to 1
-                        prices.loc[(period + 1, product), agent] = current_price - (current_price - 1) / 2
+                    if product == "Product 1":
+                        # Keep Product 1's price the same across all periods
+                        prices.loc[(period + 1, product), agent] = current_price
                     else:
-                        # Increase price by half the distance to 2
-                        prices.loc[(period + 1, product), agent] = current_price + (2 - current_price) / 2
+                        # Adjust Product 2's price based on buy signals
+                        if buy_signals.loc[(period, product, agent)] == 0:
+                            # Decrease price by half the distance to 1
+                            prices.loc[(period + 1, product), agent] = current_price - (current_price - 1) / 2
+                        else:
+                            # Increase price by half the distance to 2
+                            prices.loc[(period + 1, product), agent] = current_price + (2 - current_price) / 2
         return prices
 
     def calculate_profits_over_periods(self, price_algorithm, periods):
@@ -116,7 +121,7 @@ class ProfitCalculator:
 
 # Example Usage
 # Number of agents
-num_agents = 10
+num_agents = 10000
 
 # Generate reservation values
 product_1_values = np.random.uniform(0, 1, num_agents)  # Values between 0 and 1
@@ -155,26 +160,27 @@ print(baseline_profits)
 print("\nOptimal Profits:")
 print(optimal_profits)
 
-# Display reservation values
-print("\nReservation Values:")
-print(df_reservation)
 
-# Debugging: Print baseline prices
-baseline_prices = calculator.baseline_price_algorithm(periods=2)
-print("\nBaseline Prices:")
-print(baseline_prices)
-# Debugging: Print baseline prices
-optimal_prices = calculator.optimal_price_algorithm(periods=2)
-print("\Optimal Prices:")
-print(optimal_prices)
+# # Display reservation values
+# print("\nReservation Values:")
+# print(df_reservation)
 
-# Display buy signals for each agent in each period
-print("\nBaseline Buy Signals (for each agent, each period):")
-for period, buy_signals in enumerate(baseline_buy_signals):
-    print(f"Period {period}:")
-    print(buy_signals.unstack(level="Agent"))
+# # Debugging: Print baseline prices
+# baseline_prices = calculator.baseline_price_algorithm(periods=2)
+# print("\nBaseline Prices:")
+# print(baseline_prices)
+# # Debugging: Print baseline prices
+# optimal_prices = calculator.optimal_price_algorithm(periods=2)
+# print("\Optimal Prices:")
+# print(optimal_prices)
 
-print("\nOptimal Buy Signals (for each agent, each period):")
-for period, buy_signals in enumerate(optimal_buy_signals):
-    print(f"Period {period}:")
-    print(buy_signals.unstack(level="Agent"))
+# # Display buy signals for each agent in each period
+# print("\nBaseline Buy Signals (for each agent, each period):")
+# for period, buy_signals in enumerate(baseline_buy_signals):
+#     print(f"Period {period}:")
+#     print(buy_signals.unstack(level="Agent"))
+
+# print("\nOptimal Buy Signals (for each agent, each period):")
+# for period, buy_signals in enumerate(optimal_buy_signals):
+#     print(f"Period {period}:")
+#     print(buy_signals.unstack(level="Agent"))
