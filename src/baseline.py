@@ -102,6 +102,44 @@ class ProfitCalculator:
                             prices.loc[(period + 1, product), agent] = current_price + (2 - current_price) / 2
         return prices
 
+    def downfacing_price_algorithm(self, periods):
+        """Downward dynamic price updating algorithm: prices change dynamically."""
+        n_agents = len(self.df_reservation.columns)
+
+        # Get target values as column vector
+        target_values = self.df_target["Target Value"].values.reshape(-1, 1)
+
+        # Repeat across agents, then across periods
+        repeated_values = np.tile(target_values, (periods, n_agents))
+
+        # Build MultiIndex in desired order (Period → Product)
+        index = pd.MultiIndex.from_product([range(periods), self.df_reservation.index],
+                                        names=["Period", "Product"])
+
+        prices_d = pd.DataFrame(
+            repeated_values,
+            index=index,
+            columns=self.df_reservation.columns,
+        )
+
+        for period in range(periods - 1):
+            buy_signals = self.calculate_buy_signals(prices_d, period)  # Dynamically calculate buy_signals
+            for product in ["Product 1", "Product 2"]:
+                for agent in self.df_reservation.columns:
+                    current_price = prices_d.loc[(period, product), agent]
+                    if product == "Product 1":
+                        # Keep Product 1's price the same across all periods
+                        prices_d.loc[(period + 1, product), agent] = current_price
+                    else:
+                        # Adjust Product 2's price based on buy signals
+                        if buy_signals.loc[(period, product, agent)] == 0:
+                            # Decrease price by half the distance to 1.25
+                            prices_d.loc[(period + 1, product), agent] = current_price - (current_price - 1.25) / 2
+                        else:
+                            # Keep the price the same
+                            prices_d.loc[(period + 1, product), agent] = current_price
+        return prices_d
+
     def calculate_profits_over_periods(self, price_algorithm, periods):
         """Calculate profits over all periods using a given price algorithm."""
         prices = price_algorithm(periods)
@@ -154,11 +192,18 @@ optimal_buy_signals, optimal_profits = calculator.calculate_profits_over_periods
     calculator.optimal_price_algorithm, periods=2
 )
 
+# Calculate optimal downward profits
+optimal_d_buy_signals, optimal_d_profits = calculator.calculate_profits_over_periods(
+    calculator.downfacing_price_algorithm, periods=2
+)
+
 # Display results
 print("Baseline Profits:")
 print(baseline_profits)
 print("\nOptimal Profits:")
 print(optimal_profits)
+print("\nOptimal Downward Profits:")
+print(optimal_d_profits)
 
 
 # # Display reservation values
