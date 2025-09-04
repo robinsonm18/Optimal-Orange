@@ -43,30 +43,44 @@ class ProfitCalculator:
 
     def baseline_price_algorithm(self, periods):
         """Baseline price updating algorithm: prices remain fixed."""
-        # Ensure target values are aligned as rows for each product
+        n_products = len(self.df_reservation.index)
+        n_agents = len(self.df_reservation.columns)
+
         target_values = self.df_target["Target Value"].values.reshape(-1, 1)
 
-        # Repeat the target values for all agents and periods
+        # Repeat per product and agent
+        repeated_values = np.tile(target_values, (periods, n_agents))
+
+        # Build MultiIndex directly in Period → Product order
+        index = pd.MultiIndex.from_product([range(periods), self.df_reservation.index],
+                                        names=["Period", "Product"])
+
         baseline_prices = pd.DataFrame(
-            np.tile(target_values, (periods, len(self.df_reservation.columns))).reshape(
-                len(self.df_reservation.index) * periods, len(self.df_reservation.columns)
-            ),
-            index=pd.MultiIndex.from_product([self.df_reservation.index, range(periods)], names=["Product", "Period"]),
+            repeated_values,
+            index=index,
             columns=self.df_reservation.columns,
         )
-
-        # Reorder the index to match the desired structure: Period -> Product
-        baseline_prices = baseline_prices.reorder_levels(["Period", "Product"]).sort_index()
-
         return baseline_prices
+
 
     def optimal_price_algorithm(self, periods):
         """Optimal price updating algorithm: prices change dynamically."""
+        n_products = len(self.df_reservation.index)
+        n_agents = len(self.df_reservation.columns)
+
+        # Get target values as column vector
+        target_values = self.df_target["Target Value"].values.reshape(-1, 1)
+
+        # Repeat across agents, then across periods
+        repeated_values = np.tile(target_values, (periods, n_agents))
+
+        # Build MultiIndex in desired order (Period → Product)
+        index = pd.MultiIndex.from_product([range(periods), self.df_reservation.index],
+                                        names=["Period", "Product"])
+
         prices = pd.DataFrame(
-            np.tile(self.df_target["Target Value"].values, (periods, len(self.df_reservation.columns))).reshape(
-                periods * len(self.df_reservation.index), len(self.df_reservation.columns)
-            ),
-            index=pd.MultiIndex.from_product([range(periods), self.df_reservation.index], names=["Period", "Product"]),
+            repeated_values,
+            index=index,
             columns=self.df_reservation.columns,
         )
 
@@ -149,6 +163,10 @@ print(df_reservation)
 baseline_prices = calculator.baseline_price_algorithm(periods=2)
 print("\nBaseline Prices:")
 print(baseline_prices)
+# Debugging: Print baseline prices
+optimal_prices = calculator.optimal_price_algorithm(periods=2)
+print("\Optimal Prices:")
+print(optimal_prices)
 
 # Display buy signals for each agent in each period
 print("\nBaseline Buy Signals (for each agent, each period):")
